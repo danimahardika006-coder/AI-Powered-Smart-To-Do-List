@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Powered Smart To-Do List</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ───────────────── HEADER ───────────────── -->
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="brand-icon">✅</span>
+      <h1>SmartTodo <span class="brand-ai">AI</span></h1>
+    </div>
+    <div class="header-actions">
+      <button id="btn-review" class="btn btn-ghost" title="Review Harian">
+        📊 Review Harian
+      </button>
+      <button id="btn-theme" class="btn btn-icon" title="Toggle Dark Mode" aria-label="Toggle theme">
+        🌙
+      </button>
+    </div>
+  </header>
+
+  <!-- ───────────────── MAIN ───────────────── -->
+  <main class="app-main">
+
+    <!-- Dashboard Stats -->
+    <section class="dashboard-stats" aria-label="Statistik produktivitas">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-total">0</span>
+        <span class="stat-label">Total Tugas</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-active">0</span>
+        <span class="stat-label">Aktif</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-done">0</span>
+        <span class="stat-label">Selesai</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-score">—</span>
+        <span class="stat-label">Skor Hari Ini</span>
+      </div>
+    </section>
+
+    <!-- Add Task Form -->
+    <section class="add-task-section" aria-label="Tambah tugas baru">
+      <form id="form-add-task" class="add-task-form" autocomplete="off">
+        <div class="form-row">
+          <input
+            type="text"
+            id="input-task"
+            class="task-input"
+            placeholder="Tambah tugas baru…"
+            maxlength="200"
+            required
+          />
+          <select id="select-category" class="task-select" aria-label="Kategori">
+            <option value="Personal">Personal</option>
+            <option value="Work">Work</option>
+            <option value="Kuliah">Kuliah</option>
+          </select>
+          <button type="submit" class="btn btn-primary">+ Tambah</button>
+        </div>
+        <!-- AI Priority hint (filled by AI) -->
+        <div id="ai-priority-hint" class="ai-hint hidden" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <!-- Filters -->
+    <section class="filter-section" aria-label="Filter tugas">
+      <div class="filter-group" role="group" aria-label="Status filter">
+        <button class="filter-btn active" data-filter="all">Semua</button>
+        <button class="filter-btn" data-filter="active">Aktif</button>
+        <button class="filter-btn" data-filter="completed">Selesai</button>
+      </div>
+      <div class="filter-group" role="group" aria-label="Kategori filter">
+        <button class="filter-btn cat-btn active" data-cat="all">Semua</button>
+        <button class="filter-btn cat-btn" data-cat="Work">Work</button>
+        <button class="filter-btn cat-btn" data-cat="Kuliah">Kuliah</button>
+        <button class="filter-btn cat-btn" data-cat="Personal">Personal</button>
+      </div>
+    </section>
+
+    <!-- Task List -->
+    <section class="task-list-section" aria-label="Daftar tugas">
+      <ul id="task-list" class="task-list" role="list">
+        <!-- tasks rendered here by app.js -->
+      </ul>
+      <p id="empty-state" class="empty-state hidden">
+        🎉 Tidak ada tugas di sini. Tambahkan tugas baru di atas!
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: Productivity Coach (Review Harian)
+  ═══════════════════════════════════════════ -->
+  <div id="modal-coach" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-coach-title">
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-coach" aria-label="Tutup">✕</button>
+      <h2 id="modal-coach-title">📊 Productivity Coach</h2>
+      <div id="coach-content" class="modal-body">
+        <div class="skeleton-block"></div>
+        <div class="skeleton-block" style="width:80%"></div>
+        <div class="skeleton-block" style="width:60%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: AI Draft Assistant
+  ═══════════════════════════════════════════ -->
+  <div id="modal-draft" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-draft-title">
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-draft" aria-label="Tutup">✕</button>
+      <h2 id="modal-draft-title">💡 AI Assist — Draft</h2>
+      <p id="draft-task-name" class="draft-task-label"></p>
+      <div id="draft-content" class="modal-body">
+        <div class="skeleton-block"></div>
+        <div class="skeleton-block" style="width:90%"></div>
+        <div class="skeleton-block" style="width:70%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: Edit Task
+  ═══════════════════════════════════════════ -->
+  <div id="modal-edit" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-edit-title">
+    <div class="modal-card">
+      <button class="modal-close" data-modal="modal-edit" aria-label="Tutup">✕</button>
+      <h2 id="modal-edit-title">✏️ Edit Tugas</h2>
+      <div class="modal-body">
+        <input type="hidden" id="edit-task-id" />
+        <div class="form-group">
+          <label for="edit-task-text">Nama Tugas</label>
+          <input type="text" id="edit-task-text" class="task-input" maxlength="200" />
+        </div>
+        <div class="form-group">
+          <label for="edit-task-category">Kategori</label>
+          <select id="edit-task-category" class="task-select">
+            <option value="Personal">Personal</option>
+            <option value="Work">Work</option>
+            <option value="Kuliah">Kuliah</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-save-edit" class="btn btn-primary">Simpan</button>
+          <button class="btn btn-ghost modal-close" data-modal="modal-edit">Batal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
